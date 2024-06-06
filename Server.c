@@ -9,7 +9,7 @@
 #include<fcntl.h>
 #include<pthread.h>
 
-//Basic Account Structures
+
 
 typedef struct normalUser
 {
@@ -39,7 +39,7 @@ typedef struct admin
 	char password[10];
 }admin;
 
-//Same Procedure has been carried out to get the details of different type of Accounts
+
 
 normalUser getNU(int ID)
 {
@@ -47,13 +47,10 @@ normalUser getNU(int ID)
 	normalUser User;
 	int fd=open("NormalUserdb",O_RDONLY,0744);
 
-	//Record File Locking (in Read Mode)
-	struct flock lock; // flock=file lock
-	lock.l_type = F_RDLCK; // kaun se type ka lock hai 
-	lock.l_whence=SEEK_SET; // pointer ko kaha se start karna hai 
-	// SEEK_CUR--> pointer is placed at the current position where it is right now from the above program 
-	// SEEK_SET-->pointer is placed at the begining
-	// SEEK_END-->pointer is placed at the last
+	
+	struct flock lock; 
+	lock.l_type = F_RDLCK; 
+	lock.l_whence=SEEK_SET; 
 	lock.l_start=(realid)*sizeof(normalUser); 
 	if(lseek(fd, 0 , SEEK_END) <= lock.l_start)
 	{
@@ -64,17 +61,17 @@ normalUser getNU(int ID)
 	}   	     
 	lock.l_len=sizeof(normalUser);	             
 	lock.l_pid=getpid();
-	// 
 	
-	fcntl(fd,F_SETLKW,&lock); //Setting of the Lock	
+	
+	fcntl(fd,F_SETLKW,&lock); 
 
-	lseek(fd,(realid)*sizeof(normalUser),SEEK_SET); //Getting to the UserInfo Location 
+	lseek(fd,(realid)*sizeof(normalUser),SEEK_SET); 
 	read(fd,&User,sizeof(normalUser));
 
-	lock.l_type=F_UNLCK; //Unlock the lock once we have done our operation on it
+	lock.l_type=F_UNLCK; 
 	fcntl(fd,F_SETLK,&lock);
 
-	close(fd); // fd=file discriptor
+	close(fd); 
 	return User;
 }
 
@@ -135,7 +132,6 @@ admin getAdmin(int ID)
 	return User;
 }
 
-//Same procedure has been done for normal, joint and admin accounts for authentication
 
 bool authenticateNU(normalUser user)
 {
@@ -145,7 +141,6 @@ bool authenticateNU(normalUser user)
 	bool result;
 	normalUser temp;
 
-	//Record Locking(Read) for reading the user's credentials
 	struct flock lock;
 	lock.l_type = F_RDLCK;
 	lock.l_whence=SEEK_SET;
@@ -153,7 +148,7 @@ bool authenticateNU(normalUser user)
 	lock.l_len=sizeof(normalUser);	             
 	lock.l_pid=getpid();
 	
-	fcntl(fd,F_SETLKW,&lock);	//Locked the Record
+	fcntl(fd,F_SETLKW,&lock);
 
 	lseek(fd,(realid)*sizeof(normalUser),SEEK_SET);  
 	read(fd,&temp,sizeof(normalUser));
@@ -161,7 +156,7 @@ bool authenticateNU(normalUser user)
 	else	result=false;
 
 	lock.l_type=F_UNLCK;
-	fcntl(fd,F_SETLK,&lock); //Unlocked the record
+	fcntl(fd,F_SETLK,&lock); 
 
 	close(fd);
 	return result;
@@ -244,11 +239,11 @@ bool depositMoney(int accType,int ID,float amt)
 		lseek(fd,(realid)*sizeof(normalUser),SEEK_SET);  
 		read(fd,&User,sizeof(normalUser));
 		
-		if(!strcmp(User.status,"ACTIVE")) //Checking the Status of the Account
+		if(!strcmp(User.status,"ACTIVE")) 
 		{
 			User.balance += amt;
 			lseek(fd,sizeof(normalUser)*(-1),SEEK_CUR);
-			write(fd,&User,sizeof(normalUser)); //Rewriting the Details
+			write(fd,&User,sizeof(normalUser)); 
 			result=true;
 		}
 		else	result=false;
@@ -304,7 +299,7 @@ bool withdrawMoney(int accType,int ID,float amt)
 		bool result;
 	
 		struct flock lock;
-		//Write Record Lock
+		
 		lock.l_type = F_WRLCK;
 		lock.l_whence=SEEK_SET;
 		lock.l_start=(realid)*sizeof(normalUser);   
@@ -318,9 +313,9 @@ bool withdrawMoney(int accType,int ID,float amt)
 		lseek(fd,(realid)*sizeof(normalUser),SEEK_SET);  
 		read(fd,&User,sizeof(normalUser));
 		
-		if(!strcmp(User.status,"ACTIVE") && User.balance>=amt) //Checking whether the amount can be withdrawn or not
+		if(!strcmp(User.status,"ACTIVE") && User.balance>=amt) 
 		{
-			User.balance-=amt; //Reducing the Amount
+			User.balance-=amt;
 			lseek(fd,sizeof(normalUser)*(-1),SEEK_CUR);
 			write(fd,&User,sizeof(normalUser));
 			result=true;
@@ -389,7 +384,7 @@ float getBalance(int accType,int ID)
 
 		lseek(fd,(realid)*sizeof(normalUser),SEEK_SET); 
 		read(fd,&User,sizeof(normalUser));
-		//Reading the Balance
+		
 		if(!strcmp(User.status,"ACTIVE"))	result=User.balance;
 		else		result=0;
 
@@ -415,7 +410,7 @@ float getBalance(int accType,int ID)
 
 		lseek(fd,(realid)*sizeof(jointUser),SEEK_SET); 
 		read(fd,&User,sizeof(jointUser));
-		//Reading the Balance
+		
 		if(!strcmp(User.status,"ACTIVE"))	result=User.balance;
 		else		result=0;
 
@@ -502,32 +497,32 @@ bool alterPassword(int accType,int ID,char newPwd[10])
 
 bool addNormalUser(normalUser record)
 {
-	int fd=open("NormalUserdb",O_RDWR,0744); //We have to create a New Normal User
+	int fd=open("NormalUserdb",O_RDWR,0744);
 	bool result;
 	
 	struct flock lock;
 	lock.l_type = F_WRLCK;
 	lock.l_whence=SEEK_END;
-	lock.l_start=(-1)*sizeof(normalUser);  // positions the lock at the start of the last normalUser record in the file.
+	lock.l_start=(-1)*sizeof(normalUser); 
 	lock.l_len=sizeof(normalUser);	         
 	lock.l_pid=getpid();
 	
 	fcntl(fd,F_SETLKW,&lock);	
 	
 	normalUser User;
-	lseek(fd,(-1)*sizeof(normalUser),SEEK_END);  // last record ke last tak pointer has reached 
+	lseek(fd,(-1)*sizeof(normalUser),SEEK_END);  
 	read(fd,&User,sizeof(normalUser));
 		
-	record.userID=User.userID+1; //Creating new userID and AccID
+	record.userID=User.userID+1; 
 	record.account_no=User.account_no+1;
 	strcpy(record.status,"ACTIVE");
 	
-	int j=write(fd,&record,sizeof(normalUser)); //Checking whether it got written as the write function return s the number of bytes written
+	int j=write(fd,&record,sizeof(normalUser)); 
 	if(j!=0)	result=true;
 	else	result=false;
 	
 	lock.l_type=F_UNLCK;
-	fcntl(fd,F_SETLK,&lock); // release the lock
+	fcntl(fd,F_SETLK,&lock);
 	
 	close(fd);
 	return result;	
@@ -612,14 +607,14 @@ bool deleteJointUser(int ID)
 	struct flock lock;
 	lock.l_type = F_WRLCK;
 	lock.l_whence=SEEK_SET;
-	lock.l_start=(realid)*sizeof(jointUser);// positions the lock at the start of the user record corresponding to realid.   
+	lock.l_start=(realid)*sizeof(jointUser);  
 	lock.l_len=sizeof(jointUser);	            
 	lock.l_pid=getpid();
 	
 	fcntl(fd,F_SETLKW,&lock);	
 
 	jointUser User;
-	lseek(fd,(realid)*sizeof(jointUser),SEEK_SET); // The lseek function moves the file pointer to the start of the user record specified by realid
+	lseek(fd,(realid)*sizeof(jointUser),SEEK_SET); 
 	read(fd,&User,sizeof(jointUser));
 	
 	if(!strcmp(User.status,"ACTIVE"))
@@ -656,14 +651,14 @@ bool modifyNormalUser(normalUser modUser)
 	fcntl(fd,F_SETLKW,&lock);	
 
 	normalUser User;
-	lseek(fd,(realid)*sizeof(normalUser),SEEK_SET);// The lseek function moves the file pointer to the start of the user record specified by realid
+	lseek(fd,(realid)*sizeof(normalUser),SEEK_SET);
 	read(fd,&User,sizeof(normalUser));
 	
 	if(!strcmp(User.status,"ACTIVE") && (modUser.account_no==User.account_no))
 	{	
 		strcpy(modUser.status,"ACTIVE");
 		lseek(fd,(-1)*sizeof(normalUser),SEEK_CUR); 
-		//Rewriting --> The lseek function is used to move the file pointer back to the start of the current user record (using SEEK_CUR with -1 * sizeof(normalUser)). 
+		
 		int j=write(fd,&modUser,sizeof(normalUser));
 		if(j!=0)	result=true;
 		else		result=false;
@@ -765,7 +760,7 @@ void provideService(int nsd)
 	while(1)
 	{
 		read(nsd,&option2,sizeof(int));
-		//NOrmal or JOint Account
+		
 		if(choice==1 || choice==2)
 		{
 			if(option2==1)
@@ -795,7 +790,7 @@ void provideService(int nsd)
 			}
 			else if(option2==5)
 			{
-				//Viewing Details of their respective Accounts
+				
 				if(choice==1)
 				{
 					normalUser user1 = getNU(userID);
@@ -809,7 +804,7 @@ void provideService(int nsd)
 			}
 			else if(option2==6)	break;
 		}
-		//For admin
+		
 		else if(choice==3)
 		{
 			read(nsd,&type,sizeof(int));
@@ -889,7 +884,7 @@ void provideService(int nsd)
 	write(1,"CLIENT SESSION ENDED\n",sizeof("CLIENT SESSION ENDED\n"));
 	return;
 }
-// thread functions This signature is typical for thread functions, allowing them to be passed to thread creation functions like pthread_create in POSIX threads.
+
 void *talktoClient(void *nsd) 
 {
 	int nsd1 = *(int*)nsd;
@@ -903,18 +898,18 @@ int main()
 	pthread_t thread;
 	bool result;
 
-	//AF_INET for internet communication
+	
 	sd=socket(AF_INET,SOCK_STREAM,0);
 
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = htons(5555);
 
-	//Bind -> Listen -> Accept
+	
 	bind(sd,(struct sockaddr *)&server,sizeof(server));
 	listen(sd,5);	
 	
-	//Writing to the terminal 
+	
 	write(1,"Waiting for the Client.....\n",sizeof("Waiting for the Client.....\n"));
 	while(1)
 	{
