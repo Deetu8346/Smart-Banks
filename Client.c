@@ -60,13 +60,13 @@ int main()
 	char buff[50];
 	char result;
 
-	//Connecting to the Socket
+	
 	sd=socket(AF_INET,SOCK_STREAM,0);
 	server.sin_family=AF_INET;
-	server.sin_addr.s_addr=inet_addr("127.0.0.1"); //same machine
+	server.sin_addr.s_addr=inet_addr("127.0.0.1"); 
 	server.sin_port=htons(5555);
 
-	//Connecting to the Server
+	
 	connect(sd,(struct sockaddr *)&server,sizeof(server));
 
 	chooseOption(sd);
@@ -88,7 +88,7 @@ void LoginasNU(int sd)
 	write(1,"Password : ",sizeof("Password : "));
 	scanf("%s",User.password);
 
-	//Writing this to the SERVER for authentication
+	
 	write(sd,&option,sizeof(int));
 	write(sd,&User,sizeof(normalUser));
 
@@ -366,8 +366,8 @@ void deleteAccount(int sd)
 	scanf("%d",&userID);
 	write(sd,&userID,sizeof(int));
 	
-	read(sd,&result,sizeof(result)); // - Reads the result of the account deletion operation from the server. 
-	//The server processes the account deletion request and informs the client whether it was successful or not, and the result is stored in the result variable.
+	read(sd,&result,sizeof(result)); 
+	
 
 	if(!result)
 	{
@@ -428,7 +428,7 @@ void modifyAccount(int sd)
 		write(sd,&User2,sizeof(jointUser));
 	}
 	
-	read(sd,&result,sizeof(result)); //from the server
+	read(sd,&result,sizeof(result)); 
 
 	if(!result){
 
@@ -508,8 +508,7 @@ void searchAccount(int sd)
 void showMenu(int sd)
 {
 	int option2;
-	// option denotes NU as 1 and JU as 2 
-	// whereas option2 denotes deposit,withdraw,password change ,view details,exit.
+	
 	if(option==1 || option==2)
 	{
 		write(1,"Services we can provice -\n",sizeof("Services we can provice -\n"));
@@ -550,8 +549,7 @@ void showMenu(int sd)
 				break;
 		}
 	}
-	else if(option==3) // ye admin ke liye hai option =3 
-	// admin can add, delete ,modify ,search 
+	else if(option==3) 
 	{
 		write(1,"Services we can provice -\n",sizeof("Services we can provice -\n"));
 		write(1,"1 Add Account\n",sizeof("1 Add Account\n"));
