@@ -297,6 +297,55 @@ void viewDetails(int sd)
 	showMenu(sd);
 	return;
 }
+void performTransaction(int srcID, int destID, float amount) {
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    transactionRequest req;
+    transactionResponse res;
+
+
+    req.srcID = srcID;
+    req.destID = destID;
+    req.amount = amount;
+
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        printf("\nInvalid address/ Address not supported \n");
+        return;
+    }
+
+
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return;
+    }
+
+
+    send(sock, &req, sizeof(req), 0);
+    printf("Transaction request sent\n");
+
+
+    read(sock, &res, sizeof(res));
+
+
+    if (res.success) {
+        printf("Transaction successful: %s\n", res.message);
+    } else {
+        printf("Transaction failed: %s\n", res.message);
+    }
+
+
+    close(sock);
+}
 
 void addAccount(int sd)
 {
