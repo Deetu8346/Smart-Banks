@@ -705,6 +705,73 @@ bool modifyJointUser(jointUser modUser)
 	close(fd);
 	return result;	
 }
+bool transferMoney(int srcID, int destID, float amt) {
+    int srcRealID = srcID - 10000;
+    int destRealID = destID - 10000;
+    int fd = open("NormalUserdb", O_RDWR, 0744);
+    if (fd < 0) return false;
+
+    normalUser srcUser, destUser;
+
+
+    struct flock lock;
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = (srcRealID) * sizeof(normalUser);
+    lock.l_len = sizeof(normalUser);
+    lock.l_pid = getpid();
+
+    if (fcntl(fd, F_SETLKW, &lock) == -1) {
+        close(fd);
+        return false;
+    }
+
+
+    lseek(fd, (srcRealID) * sizeof(normalUser), SEEK_SET);
+    read(fd, &srcUser, sizeof(normalUser));
+
+    lock.l_start = (destRealID) * sizeof(normalUser);
+    if (fcntl(fd, F_SETLKW, &lock) == -1) {
+        lock.l_type = F_UNLCK;
+        fcntl(fd, F_SETLK, &lock);
+        close(fd);
+        return false;
+    }
+
+
+    lseek(fd, (destRealID) * sizeof(normalUser), SEEK_SET);
+    read(fd, &destUser, sizeof(normalUser));
+
+    bool result = false;
+    if (!strcmp(srcUser.status, "ACTIVE") && !strcmp(destUser.status, "ACTIVE")) {
+        if (srcUser.balance >= amt) {
+            // Update balances
+            srcUser.balance -= amt;
+            destUser.balance += amt;
+
+
+            lseek(fd, (srcRealID) * sizeof(normalUser), SEEK_SET);
+            write(fd, &srcUser, sizeof(normalUser));
+
+
+            lseek(fd, (destRealID) * sizeof(normalUser), SEEK_SET);
+            write(fd, &destUser, sizeof(normalUser));
+
+            result = true;
+        }
+    }
+
+
+    lock.l_type = F_UNLCK;
+    lock.l_start = (srcRealID) * sizeof(normalUser);
+    fcntl(fd, F_SETLK, &lock);
+
+    lock.l_start = (destRealID) * sizeof(normalUser);
+    fcntl(fd, F_SETLK, &lock);
+
+    close(fd);
+    return result;
+}
 
 void provideService(int nsd)
 {
